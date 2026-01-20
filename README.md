@@ -56,6 +56,8 @@ python scripts/x-inflect.py --treebank_folder [UD_FOLDER] --model_folder [MODEL_
 
 ## Citation
 
+If you use this code or our findings in your research, please cite:
+
 ```bibtex
 @inproceedings{munoz-ortiz-etal-2022-cross,
     title = "Cross-lingual Inflection as a Data Augmentation Method for Parsing",
@@ -79,6 +81,7 @@ python scripts/x-inflect.py --treebank_folder [UD_FOLDER] --model_folder [MODEL_
 
 ## Contact
 
+For any questions or issues, please contact the main author:
 **Alberto Muñoz-Ortiz** - [alberto.munoz.ortiz@udc.es](mailto:alberto.munoz.ortiz@udc.es)
 
 ## Acknowledgments
