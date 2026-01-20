@@ -1,5 +1,6 @@
 import os
 import random
+import src.const as const
 
 
 # This script trains a model using dep2label and the UD corpus selected using the desired encoding
@@ -13,42 +14,22 @@ def ud_to_um(
     Convert UD features to UM. The default output is located in the treebank folder, changing -ud- for -um-.
     """
     # Find the ud-conversion script
-    ud_converter = 'ud-compatibility/UD_UM/marry.py'
+    ud_converter = const.MARRY_SCRIPT
+    dev_ud_conllu = train_ud_conllu = test_ud_conllu = None
+
     for filename in os.listdir(treebank_folder):
         if filename.endswith('-ud-dev.conllu'):
-            dev_ud_conllu = treebank_folder + '/' + filename
+            dev_ud_conllu = os.path.join(treebank_folder, filename)
         if filename.endswith('-ud-train.conllu'):
-            train_ud_conllu = treebank_folder + '/' + filename
+            train_ud_conllu = os.path.join(treebank_folder, filename)
         if filename.endswith('-ud-test.conllu'):
-            test_ud_conllu = treebank_folder + '/' + filename
+            test_ud_conllu = os.path.join(treebank_folder, filename)
     # Convert both files to unimorph format
 
-    if post_lang != '':
-        try:
-            os.system('python {} convert --ud "{}" -l {}'.format(ud_converter, dev_ud_conllu, post_lang))
-        except UnboundLocalError:
-            pass
-        try:
-            os.system('python {} convert --ud "{}" -l {}'.format(ud_converter, train_ud_conllu, post_lang))
-        except UnboundLocalError:
-            pass
-        try:
-            os.system('python {} convert --ud "{}" -l {}'.format(ud_converter, test_ud_conllu, post_lang))
-        except UnboundLocalError:
-            pass
-    else:
-        try:
-            os.system('python {} convert --ud "{}"'.format(ud_converter, dev_ud_conllu))
-        except UnboundLocalError:
-            pass
-        try:
-            os.system('python {} convert --ud "{}"'.format(ud_converter, train_ud_conllu))
-        except UnboundLocalError:
-            pass
-        try:
-            os.system('python {} convert --ud "{}"'.format(ud_converter, test_ud_conllu))
-        except UnboundLocalError:
-            pass
+    for conllu_file in [dev_ud_conllu, train_ud_conllu, test_ud_conllu]:
+        if conllu_file:
+            post_lang_arg = f"-l {post_lang}" if post_lang else ""
+            os.system(f'python {ud_converter} convert --ud "{conllu_file}" {post_lang_arg}')
 
 def morph_translation(
     treebank_folder, 
@@ -61,45 +42,24 @@ def morph_translation(
     """
     Inflect the lemmas of a UD Treebank using a morphological analyzer trained in a different language to 'translate' the treebank.
     """
-    # Find the model and the dev and train sets.
     # Find the ud-conversion script
-    ud_converter = 'ud-compatibility/UD_UM/marry.py'
+    ud_converter = const.MARRY_SCRIPT
+    dev_ud_conllu = train_ud_conllu = test_ud_conllu = None
+
     # Find the model and the dev and train sets.
     for filename in os.listdir(treebank_folder):
         if filename.endswith('-ud-dev.conllu'):
-            dev_ud_conllu = treebank_folder + '/' + filename
+            dev_ud_conllu = os.path.join(treebank_folder, filename)
         if filename.endswith('-ud-train.conllu'):
-            train_ud_conllu = treebank_folder + '/' + filename
+            train_ud_conllu = os.path.join(treebank_folder, filename)
         if filename.endswith('-ud-test.conllu'):
-            test_ud_conllu = treebank_folder + '/' + filename
+            test_ud_conllu = os.path.join(treebank_folder, filename)
 
-    # Convert both files to unimorph format
-    if post_lang != '':
-        try:
-            os.system('python {} convert --ud "{}" -l {}'.format(ud_converter, dev_ud_conllu, post_lang))
-        except UnboundLocalError:
-            pass
-        try:
-            os.system('python {} convert --ud "{}" -l {}'.format(ud_converter, train_ud_conllu, post_lang))
-        except UnboundLocalError:
-            pass
-        try:
-            os.system('python {} convert --ud "{}" -l {}'.format(ud_converter, test_ud_conllu, post_lang))
-        except UnboundLocalError:
-            pass
-    else:
-        try:
-            os.system('python {} convert --ud "{}"'.format(ud_converter, dev_ud_conllu))
-        except UnboundLocalError:
-            pass
-        try:
-            os.system('python {} convert --ud "{}"'.format(ud_converter, train_ud_conllu))
-        except UnboundLocalError:
-            pass
-        try:
-            os.system('python {} convert --ud "{}"'.format(ud_converter, test_ud_conllu))
-        except UnboundLocalError:
-            pass
+    # Convert files to unimorph format
+    for conllu_file in [dev_ud_conllu, train_ud_conllu, test_ud_conllu]:
+        if conllu_file:
+            post_lang_arg = f"-l {post_lang}" if post_lang else ""
+            os.system(f'python {ud_converter} convert --ud "{conllu_file}" {post_lang_arg}')
 
     dev_um_conllu = dev_ud_conllu.replace('-ud-', '-um-')
     train_um_conllu = train_ud_conllu.replace('-ud-', '-um-')
@@ -142,9 +102,9 @@ def morph_translation(
         train_um = '\n'.join(train_list).replace('\n\n', '\n')
     
     # Create a temporal directory to place the intermediate files
-    temp_dir = 'temp_dir/'
+    temp_dir = const.TEMP_DIR
     if not os.path.exists(temp_dir):
-        os.mkdir(temp_dir)
+        os.makedirs(temp_dir)
     with open(temp_dir+'dev.in', 'w') as f:
         f.write(dev_um)
     with open(temp_dir+'train.in', 'w') as f:
@@ -156,13 +116,13 @@ def morph_translation(
                 model_path = model_folder + '/' + filename
 
     # Define the morphological analyzer script and run it on the two
-    morph_analyzer = 'neural-transducer/src/decode.py'
+    morph_analyzer = const.DECODE_MORPH_SCRIPT
 
     dev_string = 'python {} --in_file "{}" --out_file "{}" --model "{}" --decode {}'.format(
-        morph_analyzer, temp_dir+'dev.in', temp_dir+'dev.out', model_path, decode
+        morph_analyzer, os.path.join(temp_dir, 'dev.in'), os.path.join(temp_dir, 'dev.out'), model_path, decode
         )
     train_string = 'python {} --in_file "{}" --out_file "{}" --model "{}" --decode {}'.format(
-        morph_analyzer, temp_dir+'train.in', temp_dir+'train.out', model_path, decode
+        morph_analyzer, os.path.join(temp_dir, 'train.in'), os.path.join(temp_dir, 'train.out'), model_path, decode
         )
     os.system(dev_string)
     print('Dev file morphology conversion finished')
@@ -172,7 +132,7 @@ def morph_translation(
 
 
     # Dev file
-    with open(temp_dir + 'dev.out', 'r', encoding='utf-8') as f1:
+    with open(os.path.join(temp_dir, 'dev.out'), 'r', encoding='utf-8') as f1:
         inflected_list = f1.read().split('\n')
         inflected_count = 0
         with open(dev_ud_conllu) as f2:
@@ -201,7 +161,7 @@ def morph_translation(
         f.write(dev_conllu_out_text)
 
     # Train file
-    with open(temp_dir + 'train.out', 'r') as f1:
+    with open(os.path.join(temp_dir, 'train.out'), 'r') as f1:
         inflected_list = f1.read().split('\n')
         inflected_count = 0
         with open(train_ud_conllu) as f2:
@@ -296,14 +256,14 @@ def unimorph_training_data(lang, data_dir):
 def train_morph(lang, dir):#, arch, source, data='unimorph'):
     """Train a morphological analyzer using the files extracted from UniMorph"""
     # Define paths
-    lang_dir = dir + '/' + lang + '/'
-    script = 'neural-transducer/src/train.py'
-    train = lang_dir + lang + '.train'
-    dev = lang_dir + lang + '.dev'
-    test = lang_dir + lang + '.test'
-    model = lang_dir + 'model'
+    lang_dir = os.path.join(dir, lang) + '/'
+    script = const.TRAIN_MORPH_SCRIPT
+    train = os.path.join(lang_dir, lang + '.train')
+    dev = os.path.join(lang_dir, lang + '.dev')
+    test = os.path.join(lang_dir, lang + '.test')
+    model = os.path.join(lang_dir, 'model')
     print(model)
-    # Call training script fron neural-transducer
+    # Call training script from neural-transducer
     os.system('python "{}" --train "{}" --dev "{}" --test  "{}" \
             --model "{}" --arch hmm --dataset unimorph \
             --embed_dim 200 --src_hs 400 --trg_hs 400 --dropout 0.4 \

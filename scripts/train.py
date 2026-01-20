@@ -1,4 +1,10 @@
-from main import train_morph, unimorph_training_data
+import sys
+import os
+
+# Add the project root to the python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from src.main import train_morph, unimorph_training_data
 import argparse
 
 parser = argparse.ArgumentParser(description='Train a morphological inflexion system using UniMorph data.')

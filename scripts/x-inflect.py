@@ -1,4 +1,10 @@
-from main import ud_to_um, morph_translation
+import sys
+import os
+
+# Add the project root to the python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from src.main import ud_to_um, morph_translation
 import argparse
 
 parser = argparse.ArgumentParser(description='Cross-inflect a UD treebank using a seq2seq model trained on UM data')
